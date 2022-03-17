@@ -34,6 +34,7 @@ namespace BoletoCloudAPI.Controllers
       try
       {
         var data = await _boletoRepository.Get(Id);
+        //chamada para abrir navegador com link de download do pdf
         Process myProcess = new Process();
         myProcess.StartInfo.UseShellExecute = true;
         myProcess.StartInfo.FileName = data.Token;
@@ -56,6 +57,7 @@ namespace BoletoCloudAPI.Controllers
       {
         var data = await _boletoRepository.PostAdressAsync(boleto);
         var newBoleto = await _boletoRepository.Create(data);
+        //chamada para abrir navegador com link de download do pdf
         Process myProcess = new Process();
         myProcess.StartInfo.UseShellExecute = true;
         myProcess.StartInfo.FileName = newBoleto.Token;
