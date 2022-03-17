@@ -1,12 +1,11 @@
 ﻿using BoletoCloudAPI.Model;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using Refit;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+using System.Globalization;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -38,65 +37,9 @@ namespace BoletoCloudAPI.Repository
       var data = await _context.Boletos.FindAsync(Id);
       return data;
     }
-
-    //public async Task<Boleto> PostAdressAsync(Boleto boleto)
-    //{
-
-    //  var boletoCloud = RestService.For<IBoletoRepository>("https://sandbox.boletocloud.com/api/v1/");
-    //  var result = await boletoCloud.PostAdressAsync(boleto);
-    //  return result;
-    //}
-
-    //public async Task<Boleto> PostAdressAsync(Boleto boleto)
-    //{
-
-    //  string endPoint = "https://sandbox.boletocloud.com/api/v1/boletos";
-    //  var client = new HttpClient();
-    //  var data = await client.PostAsync(endPoint, new FormUrlEncodedContent((IEnumerable<KeyValuePair<string, string>>)boleto));
-    //  if (data.IsSuccessStatusCode == true)
-    //  {
-    //    boleto.Token = data.Headers.ToString();
-
-    //  }
-    //  return boleto;
-
-
-    //}
-
-    public async Task<Boleto> PostAdressAsync2(Boleto boleto)
-    {
-      try
-      {
-        string URI = "https://sandbox.boletocloud.com/api/v1/boletos";
-        string myParameters = $"boleto.conta.banco={boleto.bancoconta}&boleto.conta.agencia={boleto.agenciaconta}&boleto.conta.numero={boleto.numeroconta}" +
-          $"&boleto.conta.carteira={boleto.carteiraconta}&";
-
-        using (WebClient wc = new WebClient())
-        {
-
-          String userName = "api-key_FsS9GOa57VPIU4EyWgTO_p3ut1tGkd3cHcUY_Ed799s=";
-          String passWord = "";
-          string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes(userName + ":" + passWord));
-
-          wc.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
-          wc.Headers[HttpRequestHeader.Authorization] = "Basic" + credentials;
-          string HtmlResult = wc.UploadString(URI, myParameters);
-          Console.WriteLine(HtmlResult);
-        }
-      }
-      catch (Exception ex)
-      {
-
-        throw;
-      }
-
-
-      return boleto;
-
-
-    }
-
-
+     
+    
+    //ultilizado para converter a strings do token em base64
     public static string Base64Encode(string textToEncode)
     {
       byte[] textAsBytes = Encoding.UTF8.GetBytes(textToEncode);
@@ -108,17 +51,22 @@ namespace BoletoCloudAPI.Repository
 
       try
       {
-
+        //Onde é Gerado as informações do boleto 
         var data = new Dictionary<string, string>();
+
         data.Add("boleto.conta.banco", boleto.bancoconta);
-        data.Add("boleto.valor", boleto.valor.ToString());
+        data.Add("boleto.documento", boleto.documento);
+        data.Add("boleto.numero", boleto.numero);
+        data.Add("boleto.valor", boleto.valor.ToString("0.00", CultureInfo.InvariantCulture));        
+        if (boleto.juros > 0){data.Add("boleto.juros", boleto.juros.ToString("0.00", CultureInfo.InvariantCulture));}
+        if (boleto.multa > 0){data.Add("boleto.multa", boleto.multa.ToString("0.00", CultureInfo.InvariantCulture));}
         data.Add("boleto.conta.agencia", boleto.agenciaconta);
         data.Add("boleto.conta.numero", boleto.numeroconta);
         data.Add("boleto.conta.carteira", boleto.carteiraconta.ToString());
-        data.Add("boleto.emissao", boleto.emissao.ToString());
-        data.Add("boleto.vencimento", boleto.vencimento.ToString());
-        data.Add("boleto.numero", boleto.numero);
-
+        data.Add("boleto.titulo", boleto.titulo);
+        data.Add("boleto.emissao", boleto.emissao.ToString("yyyy-MM-dd"));
+        data.Add("boleto.vencimento", boleto.vencimento.ToString("yyyy-MM-dd"));
+       
         //beneficiario
         data.Add("boleto.beneficiario.nome", boleto.nomebeneficiario);
         data.Add("boleto.beneficiario.cprf", boleto.cprfbeneficiario);
@@ -136,25 +84,30 @@ namespace BoletoCloudAPI.Repository
         data.Add("boleto.pagador.endereco.uf", boleto.ufpagador);
         data.Add("boleto.pagador.endereco.localidade", boleto.localidadepagador);
         data.Add("boleto.pagador.endereco.bairro", boleto.bairropagador);
-        data.Add("boleto.pagador.endereco.numero", boleto.numeropagador);
         data.Add("boleto.pagador.endereco.logradouro", boleto.logradouropagador);
+        data.Add("boleto.pagador.endereco.numero", boleto.numeropagador);
 
+        
+        //inicia minha sessão http
         using (var cliente = new HttpClient())
         {
+          //onde as informações são convertidas para application/x-www-form-urlencoded
           var conteudo = new FormUrlEncodedContent(data);
-
-          // ServicePointManager.SecurityProtocol =  SecurityProtocolType.Tls | SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
-
+          //criado o token de Authorization
           String userName = "api-key_FsS9GOa57VPIU4EyWgTO_p3ut1tGkd3cHcUY_Ed799s=";
           String passWord = "";
+          //configurado o tipo de Authorization
           cliente.DefaultRequestHeaders.Add($"Authorization", $"Basic {Base64Encode($"{userName}:{passWord}")}");
-
-          //cliente.DefaultRequestHeaders.Authorization =
-          //new AuthenticationHeaderValue("Basic ", "api-key_FsS9GOa57VPIU4EyWgTO_p3ut1tGkd3cHcUY_Ed799s=");            
-          //conteudo.Headers.Clear();
-          //conteudo.Headers.Add("Content-Type", "application/x-www-form-urlencoded");
-
+          // onde é feito o request em minha sessão
           var response = await cliente.PostAsync("https://sandbox.boletocloud.com/api/v1/boletos", conteudo);
+          //armazenando o retorno do request em uma variavel para verificar erros e afins
+          string responseBody = await response.Content.ReadAsStringAsync();
+          //armazenando o token gerado em variavel para armazenamento no BD
+          string responseToken = response.Headers.Location.OriginalString.ToString();
+          string[] newToken = responseToken.Split("/api/v1/boletos/");
+          boleto.Token = "https://sandbox.boletocloud.com/boleto/2via/atualizada/download/" + newToken[1];
+
+          //retorno de dados com token preenchido
           return boleto;
 
 

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Refit;
+using System.Diagnostics;
 
 namespace BoletoCloudAPI.Controllers
 {
@@ -27,21 +28,50 @@ namespace BoletoCloudAPI.Controllers
     }
 
 
-    [HttpGet("{id}")]
+    [HttpGet("{Id}")]
     public async Task<ActionResult<Boleto>> GetBoletos(int Id)
     {
-      return await _boletoRepository.Get(Id);
+      try
+      {
+        var data = await _boletoRepository.Get(Id);
+        Process myProcess = new Process();
+        myProcess.StartInfo.UseShellExecute = true;
+        myProcess.StartInfo.FileName = data.Token;
+        myProcess.Start();
+        return data;
+      }
+      catch (Exception ex)
+      {
+
+        throw;
+      }
+      
     }
 
     [HttpPost]
     public async Task<ActionResult<Boleto>> PostBoleto([FromBody] Boleto boleto)
+      { 
+
+      try
+      {
+        var data = await _boletoRepository.PostAdressAsync(boleto);
+        var newBoleto = await _boletoRepository.Create(data);
+        Process myProcess = new Process();
+        myProcess.StartInfo.UseShellExecute = true;
+        myProcess.StartInfo.FileName = newBoleto.Token;
+        myProcess.Start();
+        return newBoleto;
+
+
+      }
+      catch (Exception ex)
       {
 
-      var data = await _boletoRepository.PostAdressAsync(boleto);
-      
-       var newBoleto = await _boletoRepository.Create(boleto);
-        return newBoleto;
-           
+        throw;
+      }
+
+
+
     }
 
 
