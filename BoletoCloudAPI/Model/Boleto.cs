@@ -8,9 +8,10 @@ namespace BoletoCloudAPI.Model
 {
   public class Boleto
   {
-
-    //boleto
     public int Id { get; set; }
+    public string isError { get; set; }
+    public bool Error { get; set; }
+    //boleto    
     public string Token { get; set; }    
     public string titulo { get; set; }    
     public bool aceite { get; set; }
@@ -52,6 +53,8 @@ namespace BoletoCloudAPI.Model
     public string agenciaconta { get; set; }
     public string numeroconta { get; set; }
     public int carteiraconta { get; set; }
+
+    
 
   }
 

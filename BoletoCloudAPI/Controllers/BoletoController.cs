@@ -46,16 +46,16 @@ namespace BoletoCloudAPI.Controllers
 
         throw;
       }
-      
+
     }
 
     [HttpPost]
     public async Task<ActionResult<Boleto>> PostBoleto([FromBody] Boleto boleto)
-      { 
+    {
 
-      try
+      var data = await _boletoRepository.PostAdressAsync(boleto);
+      if (boleto.Error == false)
       {
-        var data = await _boletoRepository.PostAdressAsync(boleto);
         var newBoleto = await _boletoRepository.Create(data);
         //chamada para abrir navegador com link de download do pdf
         Process myProcess = new Process();
@@ -63,14 +63,15 @@ namespace BoletoCloudAPI.Controllers
         myProcess.StartInfo.FileName = newBoleto.Token;
         myProcess.Start();
         return newBoleto;
-
-
       }
-      catch (Exception ex)
+      else
       {
-
-        throw;
+        return boleto;
       }
+
+
+
+
 
 
 
